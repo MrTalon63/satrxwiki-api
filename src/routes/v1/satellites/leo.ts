@@ -23,43 +23,36 @@ async function fetchLEOSatellites() {
 	const leo = satelliteElements.slice(0, lastLeoEl);
 	if (satelliteElements.length === 0 || lastLeoEl === -1) return;
 
-	for (let i = 0; i < leo.length; i++) {
-		if (leo[i] && (leo[i + 1] === "🔴" || leo[i + 1] === "🟢")) {
-			logger.verbose(`Found satellite: ${leo[i]}`);
+	function createDownlink(index: number) {
+		return {
+			frequencies: leo[index + 2]?.split(", ").map((freq) => parseFloat(freq)) || [],
+			type: leo[index + 3] || "",
+			bandwidth: leo[index + 4] || "",
+			polarization: leo[index + 5] || "",
+			dumpLocations: leo[index + 6]?.split(";") || [],
+		};
+	}
 
-			const name = leo[i] || "";
-			let state: "active" | "inactive" | "unknown" | "partial" = "unknown";
-			if (leo[i + 1] === "🟢") state = "active";
-			else if (leo[i + 1] === "🔴") state = "inactive";
-			const frequencies: number[] = leo[i + 2]?.split(", ").map((freq) => parseFloat(freq)) || [];
+	for (let elementIndex = 0; elementIndex < leo.length; elementIndex++) {
+		const stateIndicator = leo[elementIndex + 1];
+		if (stateIndicator !== "🔴" && stateIndicator !== "🟢") continue;
+
+		const name = leo[elementIndex];
+
+		if (name) {
+			// New satellite
+			logger.verbose(`Found satellite: ${name}`);
 			leoSatellites.push({
 				name,
-				state,
-				downlinks: [
-					{
-						frequencies,
-						type: leo[i + 3] || "",
-						bandwidth: leo[i + 4] || "",
-						polarization: leo[i + 5] || "",
-						dumpLocations: leo[i + 6]?.split(";") || [],
-					},
-				],
-				notes: leo[i + 7] || "",
+				state: stateIndicator === "🟢" ? "active" : "inactive",
+				downlinks: [createDownlink(elementIndex)],
+				notes: leo[elementIndex + 7] || "",
 			});
-		}
-
-		if (leo[i] === "" && (leo[i + 1] === "🔴" || leo[i + 1] === "🟢")) {
+		} else if (leoSatellites.length > 0) {
+			// Additional downlink for previous satellite
 			const lastSat = leoSatellites[leoSatellites.length - 1] as Satellite;
 			logger.verbose(`Found another downlink for: ${lastSat.name}`);
-
-			const frequencies: number[] = leo[i + 2]?.split(", ").map((freq) => parseFloat(freq)) || [];
-			lastSat.downlinks.push({
-				frequencies,
-				type: leo[i + 3] || "",
-				bandwidth: leo[i + 4] || "",
-				polarization: leo[i + 5] || "",
-				dumpLocations: leo[i + 6]?.split(";") || [],
-			});
+			lastSat.downlinks.push(createDownlink(elementIndex));
 		}
 	}
 

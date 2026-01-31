@@ -1,0 +1,27 @@
+{
+	"name": "satrxwiki-api",
+	"module": "src/server.ts",
+	"type": "module",
+	"private": true,
+	"version": "0.0.1",
+	"license": "MIT",
+	"author": {
+		"name": "Marcin Czop",
+		"email": "marcin@mrtalon.eu",
+		"url": "https://mrtalon.eu"
+	},
+	"scripts": {
+		"start": "bun src/server.ts",
+		"dev": "bun --watch src/server.ts"
+	},
+	"devDependencies": {
+		"@types/bun": "latest"
+	},
+	"peerDependencies": {
+		"typescript": "^5"
+	},
+	"dependencies": {
+		"cheerio": "^1.2.0",
+		"winston": "^3.19.0"
+	}
+}
